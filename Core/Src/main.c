@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "lis2dw12_reg.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,6 +69,10 @@ static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp,
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int __io_putchar(int ch) {
+	HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 100);
+	return ch;
+}
 
 /* USER CODE END 0 */
 
@@ -84,7 +89,8 @@ int main(void)
 	dev_ctx.write_reg = platform_write;
 	dev_ctx.read_reg = platform_read;
 	dev_ctx.handle = &SENSOR_BUS;
-	int16_t temp;
+	int16_t rawTemp;
+	float temp;
 
   /* USER CODE END 1 */
 
@@ -126,13 +132,21 @@ int main(void)
 		lis2dw12_reset_get(&dev_ctx, &rst);
 	} while (rst);
 
+	/* Configure power mode */
+	lis2dw12_power_mode_set(&dev_ctx,
+						  LIS2DW12_CONT_LOW_PWR_LOW_NOISE_12bit);
+	/* Set Output Data Rate */
+	lis2dw12_data_rate_set(&dev_ctx, LIS2DW12_XL_ODR_200Hz);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  lis2dw12_temperature_raw_get(&dev_ctx, &temp);
+	  lis2dw12_temperature_raw_get(&dev_ctx, &rawTemp);
+	  temp = lis2dw12_from_lsb_to_celsius(rawTemp);
+	  printf("%f\r\n",temp);
 	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
